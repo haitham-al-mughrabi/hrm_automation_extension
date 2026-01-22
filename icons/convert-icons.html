@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Icon Converter - SVG to PNG</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f9fafb;
+    }
+    h1 {
+      color: #5b21b6;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #6b7280;
+      margin-bottom: 30px;
+    }
+    .icon-container {
+      display: flex;
+      gap: 30px;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+    }
+    .icon-box {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .icon-box h3 {
+      margin: 0 0 15px 0;
+      color: #111827;
+      font-size: 14px;
+    }
+    canvas {
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      display: block;
+      margin: 10px auto;
+    }
+    button {
+      background: #5b21b6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #4c1d95;
+    }
+    .instructions {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      border-left: 4px solid #5b21b6;
+      margin-top: 30px;
+    }
+    .instructions h2 {
+      margin-top: 0;
+      color: #5b21b6;
+      font-size: 18px;
+    }
+    .instructions ol {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    .instructions li {
+      margin: 8px 0;
+      color: #374151;
+    }
+  </style>
+</head>
+<body>
+  <h1>GitLab Pipeline Scheduler - Icon Converter</h1>
+  <p class="subtitle">Convert SVG icons to PNG format for the extension</p>
+
+  <div class="icon-container">
+    <div class="icon-box">
+      <h3>16x16 Icon</h3>
+      <canvas id="canvas16" width="16" height="16"></canvas>
+      <button onclick="downloadIcon(16)">Download PNG</button>
+    </div>
+
+    <div class="icon-box">
+      <h3>48x48 Icon</h3>
+      <canvas id="canvas48" width="48" height="48"></canvas>
+      <button onclick="downloadIcon(48)">Download PNG</button>
+    </div>
+
+    <div class="icon-box">
+      <h3>128x128 Icon</h3>
+      <canvas id="canvas128" width="128" height="128"></canvas>
+      <button onclick="downloadIcon(128)">Download PNG</button>
+    </div>
+  </div>
+
+  <div class="instructions">
+    <h2>Instructions</h2>
+    <ol>
+      <li>Click each "Download PNG" button to download the icon in PNG format</li>
+      <li>Save the files with these exact names:
+        <ul>
+          <li>16x16 → <code>icon16.png</code></li>
+          <li>48x48 → <code>icon48.png</code></li>
+          <li>128x128 → <code>icon128.png</code></li>
+        </ul>
+      </li>
+      <li>Replace the existing PNG files in the <code>icons/</code> folder</li>
+      <li>The manifest.json is already configured to use these icons</li>
+    </ol>
+  </div>
+
+  <script>
+    function renderIcon(size) {
+      const canvas = document.getElementById(`canvas${size}`);
+      const ctx = canvas.getContext('2d');
+
+      // Create gradient background
+      const gradient = ctx.createLinearGradient(0, 0, size, size);
+      gradient.addColorStop(0, '#7c3aed');
+      gradient.addColorStop(1, '#5b21b6');
+
+      // Draw rounded rectangle background
+      const radius = size * 0.15;
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.roundRect(0, 0, size, size, radius);
+      ctx.fill();
+
+      // Calculate scaling factor
+      const scale = size / 48;
+
+      // Draw pipeline layers (white strokes)
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 2.5 * scale;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      // Top layer
+      ctx.beginPath();
+      ctx.moveTo(size * 0.5, size * 0.21);
+      ctx.lineTo(size * 0.1875, size * 0.333);
+      ctx.moveTo(size * 0.5, size * 0.21);
+      ctx.lineTo(size * 0.5, size * 0.458);
+      ctx.moveTo(size * 0.5, size * 0.21);
+      ctx.lineTo(size * 0.8125, size * 0.333);
+      ctx.stroke();
+
+      // Middle layer
+      ctx.beginPath();
+      ctx.moveTo(size * 0.1875, size * 0.479);
+      ctx.lineTo(size * 0.5, size * 0.604);
+      ctx.lineTo(size * 0.8125, size * 0.479);
+      ctx.stroke();
+
+      // Bottom layer
+      ctx.beginPath();
+      ctx.moveTo(size * 0.1875, size * 0.625);
+      ctx.lineTo(size * 0.5, size * 0.75);
+      ctx.lineTo(size * 0.8125, size * 0.625);
+      ctx.stroke();
+    }
+
+    function downloadIcon(size) {
+      const canvas = document.getElementById(`canvas${size}`);
+      const link = document.createElement('a');
+      link.download = `icon${size}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    // Render all icons on page load
+    renderIcon(16);
+    renderIcon(48);
+    renderIcon(128);
+
+    // Polyfill for roundRect if not available
+    if (!CanvasRenderingContext2D.prototype.roundRect) {
+      CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, radius) {
+        this.moveTo(x + radius, y);
+        this.lineTo(x + width - radius, y);
+        this.quadraticCurveTo(x + width, y, x + width, y + radius);
+        this.lineTo(x + width, y + height - radius);
+        this.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        this.lineTo(x + radius, y + height);
+        this.quadraticCurveTo(x, y + height, x, y + height - radius);
+        this.lineTo(x, y + radius);
+        this.quadraticCurveTo(x, y, x + radius, y);
+        this.closePath();
+      };
+    }
+  </script>
+</body>
+</html>
