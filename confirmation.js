@@ -64,6 +64,9 @@ function updateTime() {
 updateTime();
 setInterval(updateTime, 1000);
 
+// Set current year in footer
+document.getElementById("currentYear").textContent = new Date().getFullYear();
+
 // Handle button clicks
 document.getElementById("yesBtn").addEventListener("click", function () {
   console.log("YES button clicked for pipeline ID:", pipelineId);

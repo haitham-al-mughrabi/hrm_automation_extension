@@ -15,17 +15,6 @@ if (window.pipelineConfirmationLoaded) {
     },
   );
 
-  // Listen for messages from background script
-  chrome.runtime.onMessage.addListener(
-    function (request, sender, sendResponse) {
-      if (request.action === "showConfirmation") {
-        showConfirmationModal(request.pipeline);
-        sendResponse({ received: true });
-      }
-      return true;
-    },
-  );
-
   function showConfirmationModal(pipeline) {
     // Remove existing modal if any
     var existing = document.getElementById("pipeline-confirmation-modal");
@@ -66,6 +55,11 @@ if (window.pipelineConfirmationLoaded) {
           <span>&#10005;</span>
           <span>Dismiss</span>
         </button>
+
+        <footer class="pipeline-modal-footer">
+          <p>Made with <span class="pipeline-heart">&hearts;</span> by <strong>Haitham Al Mughrabi</strong></p>
+          <p class="pipeline-copyright">&copy; ${new Date().getFullYear()} All rights reserved</p>
+        </footer>
       </div>
     </div>
   `;

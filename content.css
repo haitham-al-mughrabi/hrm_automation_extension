@@ -8,6 +8,7 @@
   height: 100%;
   z-index: 2147483647;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  direction: ltr !important;
 }
 
 .pipeline-modal-overlay {
@@ -22,6 +23,7 @@
   align-items: center;
   justify-content: center;
   animation: pipelineFadeIn 0.3s ease;
+  direction: ltr !important;
 }
 
 @keyframes pipelineFadeIn {
@@ -34,7 +36,7 @@
 }
 
 .pipeline-modal-container {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%);
   border-radius: 20px;
   padding: 48px;
   max-width: 500px;
@@ -43,6 +45,9 @@
   color: white;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   animation: pipelineSlideIn 0.3s ease;
+  direction: ltr !important;
+  position: relative;
+  padding-bottom: 80px;
 }
 
 @keyframes pipelineSlideIn {
@@ -85,9 +90,11 @@
 
 .pipeline-modal-title {
   font-size: 32px;
-  font-weight: 700;
+  font-weight: 600;
   margin: 0 0 16px 0;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  letter-spacing: -0.02em;
+  direction: ltr !important;
 }
 
 .pipeline-modal-name {
@@ -102,6 +109,8 @@
   backdrop-filter: blur(10px);
   max-width: 100%;
   word-wrap: break-word;
+  direction: ltr !important;
+  unicode-bidi: embed;
 }
 
 .pipeline-modal-message {
@@ -109,6 +118,7 @@
   margin-bottom: 24px;
   opacity: 0.9;
   line-height: 1.5;
+  direction: ltr !important;
 }
 
 .pipeline-modal-time {
@@ -122,6 +132,8 @@
   border-radius: 10px;
   display: inline-block;
   backdrop-filter: blur(10px);
+  direction: ltr !important;
+  unicode-bidi: embed;
 }
 
 .pipeline-modal-buttons {
@@ -130,6 +142,7 @@
   justify-content: center;
   margin-bottom: 12px;
   flex-wrap: wrap;
+  direction: ltr !important;
 }
 
 .pipeline-modal-btn {
@@ -147,6 +160,7 @@
   gap: 8px;
   justify-content: center;
   white-space: nowrap;
+  direction: ltr !important;
 }
 
 .pipeline-modal-btn:hover {
@@ -168,10 +182,12 @@
   color: white;
   flex: 1;
   min-width: 180px;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .pipeline-modal-btn-primary:hover {
   background: #059669;
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
 }
 
 .pipeline-modal-btn-secondary {
@@ -179,10 +195,12 @@
   color: white;
   flex: 1;
   min-width: 180px;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
 }
 
 .pipeline-modal-btn-secondary:hover {
   background: #D97706;
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
 }
 
 .pipeline-modal-btn-dismiss {
@@ -195,20 +213,65 @@
   background: rgba(255, 255, 255, 0.3);
 }
 
+/* Footer */
+.pipeline-modal-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  padding: 8px 20px;
+  text-align: center;
+  font-size: 11px;
+  color: white;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+  direction: ltr !important;
+}
+
+.pipeline-modal-footer p {
+  margin: 2px 0;
+  line-height: 1.4;
+}
+
+.pipeline-modal-footer .pipeline-heart {
+  color: #ff6b6b;
+  display: inline-block;
+  animation: pipelineHeartbeat 1.5s ease-in-out infinite;
+}
+
+@keyframes pipelineHeartbeat {
+  0%, 100% { transform: scale(1); }
+  10%, 30% { transform: scale(1.15); }
+  20%, 40% { transform: scale(1); }
+}
+
+.pipeline-modal-footer strong {
+  font-weight: 600;
+}
+
+.pipeline-modal-footer .pipeline-copyright {
+  font-size: 10px;
+  opacity: 0.9;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
   .pipeline-modal-container {
     padding: 32px 24px;
+    padding-bottom: 80px;
   }
-  
+
   .pipeline-modal-title {
     font-size: 24px;
   }
-  
+
   .pipeline-modal-buttons {
     flex-direction: column;
   }
-  
+
   .pipeline-modal-btn-primary,
   .pipeline-modal-btn-secondary {
     width: 100%;
