@@ -246,9 +246,10 @@ function showPopupFallback(pipeline) {
 // Fallback 2: Show as notification (last resort)
 function showNotificationFallback(pipeline) {
   console.log('Using notification fallback for:', pipeline.name);
-  
+
   chrome.notifications.create('trigger-' + pipeline.id, {
     type: 'basic',
+    iconUrl: 'icons/icon128.png',
     title: 'Pipeline Trigger: ' + pipeline.name,
     message: 'Do you want to run this pipeline now? Click here to respond.',
     priority: 2,
@@ -328,6 +329,7 @@ function triggerPipeline(pipeline) {
     console.log('Pipeline triggered successfully:', result);
     chrome.notifications.create({
       type: 'basic',
+      iconUrl: 'icons/icon128.png',
       title: `${pipeline.name} - Success ✓`,
       message: `Pipeline #${result.id} started successfully!`,
       priority: 2
@@ -337,6 +339,7 @@ function triggerPipeline(pipeline) {
     console.error('Pipeline trigger failed:', error);
     chrome.notifications.create({
       type: 'basic',
+      iconUrl: 'icons/icon128.png',
       title: `${pipeline.name} - Error ✗`,
       message: `Failed to trigger: ${error.message}`,
       priority: 2
