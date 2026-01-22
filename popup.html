@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <!-- Main Dashboard View -->
+      <div id="mainView" class="view active">
+        <header>
+          <div class="header-content">
+            <div class="header-left">
+              <div class="header-icon">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M12 2L2 7L12 12L22 7L12 2Z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M2 17L12 22L22 17"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M2 12L12 17L22 12"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h1>Pipeline Scheduler</h1>
+                <p class="header-subtitle" id="pipelineCount">
+                  0 pipelines scheduled
+                </p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div class="content">
+          <div class="action-bar">
+            <button class="btn btn-primary" id="addNewBtn">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="currentColor"
+              >
+                <path
+                  d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z"
+                />
+              </svg>
+              Add New Pipeline
+            </button>
+          </div>
+
+          <div id="pipelinesList" class="pipelines-list">
+            <!-- Pipelines will be inserted here -->
+          </div>
+
+          <div id="emptyState" class="empty-state">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+              <circle
+                cx="32"
+                cy="32"
+                r="30"
+                stroke="#E5E7EB"
+                stroke-width="2"
+                stroke-dasharray="4 4"
+              />
+              <path
+                d="M32 20v24M20 32h24"
+                stroke="#9CA3AF"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+            <h3>No Pipelines Scheduled</h3>
+            <p>
+              Click "Add New Pipeline" to create your first scheduled pipeline
+              trigger
+            </p>
+          </div>
+        </div>
+
+        <!-- Footer for Main View - FIXED -->
+        <footer class="app-footer">
+          <p>
+            Made with <span class="heart">&hearts;</span> by
+            <strong>Haitham Al Mughrabi</strong>
+          </p>
+          <p class="copyright">
+            &copy; <span id="currentYear">2026</span> All rights reserved
+          </p>
+        </footer>
+      </div>
+
+      <!-- Form View (Add/Edit) -->
+      <div id="formView" class="view">
+        <header>
+          <button class="back-btn-with-text" id="backBtn">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <path
+                fill-rule="evenodd"
+                d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            <span>Back</span>
+          </button>
+          <div class="header-icon">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 2L2 7L12 12L22 7L12 2Z"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M2 17L12 22L22 17"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M2 12L12 17L22 12"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+          <h1 id="formTitle">Add Pipeline</h1>
+        </header>
+
+        <div class="content">
+          <div class="form-group">
+            <label for="pipelineName">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="currentColor"
+              >
+                <path
+                  d="M4 2.5a.5.5 0 01.5-.5h7a.5.5 0 01.5.5v2a.5.5 0 01-.5.5h-7a.5.5 0 01-.5-.5v-2zM4.5 1A1.5 1.5 0 003 2.5v2A1.5 1.5 0 004.5 6h7A1.5 1.5 0 0013 4.5v-2A1.5 1.5 0 0011.5 1h-7z"
+                />
+                <path
+                  d="M6 8a1 1 0 000 2h4a1 1 0 100-2H6zM4.862 11.276A.5.5 0 015 11.5v3a.5.5 0 01-1 0v-3a.5.5 0 01.862-.224zM11.138 11.276A.5.5 0 0111 11.5v3a.5.5 0 001 0v-3a.5.5 0 00-.862-.224z"
+                />
+              </svg>
+              Pipeline Name
+            </label>
+            <input
+              type="text"
+              id="pipelineName"
+              placeholder="e.g., Production Deploy"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="gitlabUrl">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="currentColor"
+              >
+                <path
+                  d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+                />
+              </svg>
+              GitLab Project URL
+            </label>
+            <input
+              type="text"
+              id="gitlabUrl"
+              placeholder="https://gitlab.com/api/v4/projects/12345/trigger/pipeline"
+            />
+            <span class="helper-text"
+              >Get this from Settings &rarr; CI/CD &rarr; Pipeline
+              triggers</span
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="triggerToken">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="currentColor"
+              >
+                <path
+                  d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"
+                />
+              </svg>
+              Trigger Token
+            </label>
+            <div class="input-with-icon">
+              <input
+                type="password"
+                id="triggerToken"
+                placeholder="Enter your pipeline trigger token"
+              />
+              <button class="icon-btn" id="toggleToken" type="button">
+                <svg
+                  class="eye-icon"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                  <path
+                    fill-rule="evenodd"
+                    d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </button>
+            </div>
+            <span class="helper-text"
+              >Stored securely and never auto-cleared</span
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="branchRef">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M11.75 2.5a.75.75 0 100 1.5.75.75 0 000-1.5zm-2.25.75a2.25 2.25 0 113 2.122V6A2.5 2.5 0 0110 8.5H6a1 1 0 00-1 1v1.128a2.251 2.251 0 11-1.5 0V5.372a2.25 2.25 0 111.5 0v1.836A2.492 2.492 0 016 7h4a1 1 0 001-1v-.628A2.25 2.25 0 019.5 3.25zM4.25 12a.75.75 0 100 1.5.75.75 0 000-1.5zM3.5 3.25a.75.75 0 111.5 0 .75.75 0 01-1.5 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              Branch/Ref
+            </label>
+            <input type="text" id="branchRef" placeholder="main" value="main" />
+          </div>
+
+          <div class="form-group">
+            <label for="triggerTime">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M8 15A7 7 0 108 1a7 7 0 000 14zm.5-10.5a.5.5 0 00-1 0v4.586L5.354 11.232a.5.5 0 00.707.707l2.5-2.5A.5.5 0 009 9V4.5z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              Trigger Time (HH:MM:SS)
+            </label>
+            <div class="time-inputs">
+              <input
+                type="number"
+                id="triggerHours"
+                min="0"
+                max="23"
+                placeholder="HH"
+                value="09"
+              />
+              <span class="time-separator">:</span>
+              <input
+                type="number"
+                id="triggerMinutes"
+                min="0"
+                max="59"
+                placeholder="MM"
+                value="00"
+              />
+              <span class="time-separator">:</span>
+              <input
+                type="number"
+                id="triggerSeconds"
+                min="0"
+                max="59"
+                placeholder="SS"
+                value="00"
+              />
+            </div>
+            <span class="helper-text"
+              >Set hours (0-23), minutes (0-59), and seconds (0-59)</span
+            >
+          </div>
+
+          <div class="form-group">
+            <label>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="currentColor"
+              >
+                <path
+                  d="M3.5 0a.5.5 0 01.5.5V1h8V.5a.5.5 0 011 0V1h1a2 2 0 012 2v11a2 2 0 01-2 2H2a2 2 0 01-2-2V3a2 2 0 012-2h1V.5a.5.5 0 01.5-.5zM1 4v10a1 1 0 001 1h12a1 1 0 001-1V4H1z"
+                />
+              </svg>
+              Active Days
+            </label>
+            <div class="day-selector">
+              <button class="day-btn" data-day="0">Sun</button>
+              <button class="day-btn active" data-day="1">Mon</button>
+              <button class="day-btn active" data-day="2">Tue</button>
+              <button class="day-btn active" data-day="3">Wed</button>
+              <button class="day-btn active" data-day="4">Thu</button>
+              <button class="day-btn active" data-day="5">Fri</button>
+              <button class="day-btn" data-day="6">Sat</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="toggle-label">
+              <input type="checkbox" id="isActive" checked />
+              <span class="toggle-switch"></span>
+              <span>Active (Will trigger on scheduled days)</span>
+            </label>
+          </div>
+
+          <div class="status-message" id="statusMessage"></div>
+
+          <!-- In the Form View button group, update this section: -->
+
+          <div class="button-group">
+            <button class="btn btn-primary" id="saveBtn">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="currentColor"
+              >
+                <path
+                  d="M13.854 3.646a.5.5 0 010 .708l-7 7a.5.5 0 01-.708 0l-3.5-3.5a.5.5 0 11.708-.708L6.5 10.293l6.646-6.647a.5.5 0 01.708 0z"
+                />
+              </svg>
+              Save Pipeline
+            </button>
+            <button class="btn btn-secondary" id="testBtn">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="currentColor"
+              >
+                <path
+                  d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 010 1.393z"
+                />
+              </svg>
+              Test Now
+            </button>
+          </div>
+
+          <!-- Add Cancel button after the button group -->
+          <button class="btn btn-cancel" id="cancelBtn">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path
+                d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"
+              />
+            </svg>
+            Cancel
+          </button>
+        </div>
+
+        <!-- Footer for Form View - FIXED -->
+        <footer class="app-footer">
+          <p>
+            Made with <span class="heart">&hearts;</span> by
+            <strong>Haitham Al Mughrabi</strong>
+          </p>
+          <p class="copyright">
+            &copy; <span id="formYear">2026</span> All rights reserved
+          </p>
+        </footer>
+      </div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

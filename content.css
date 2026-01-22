@@ -1,0 +1,216 @@
+/* Modal Overlay */
+#pipeline-confirmation-modal {
+  all: initial;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2147483647;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+}
+
+.pipeline-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pipelineFadeIn 0.3s ease;
+}
+
+@keyframes pipelineFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.pipeline-modal-container {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  padding: 48px;
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+  color: white;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: pipelineSlideIn 0.3s ease;
+}
+
+@keyframes pipelineSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.pipeline-modal-icon {
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  backdrop-filter: blur(10px);
+  animation: pipelinePulse 2s ease-in-out infinite;
+}
+
+@keyframes pipelinePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.pipeline-modal-icon svg {
+  width: 40px;
+  height: 40px;
+}
+
+.pipeline-modal-title {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.pipeline-modal-name {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  opacity: 0.95;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 10px 20px;
+  border-radius: 10px;
+  display: inline-block;
+  backdrop-filter: blur(10px);
+  max-width: 100%;
+  word-wrap: break-word;
+}
+
+.pipeline-modal-message {
+  font-size: 18px;
+  margin-bottom: 24px;
+  opacity: 0.9;
+  line-height: 1.5;
+}
+
+.pipeline-modal-time {
+  font-size: 24px;
+  font-weight: 600;
+  opacity: 0.95;
+  margin-bottom: 32px;
+  font-family: 'Courier New', monospace;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 10px 20px;
+  border-radius: 10px;
+  display: inline-block;
+  backdrop-filter: blur(10px);
+}
+
+.pipeline-modal-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.pipeline-modal-btn {
+  padding: 16px 32px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.pipeline-modal-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.pipeline-modal-btn:active {
+  transform: translateY(0);
+}
+
+.pipeline-modal-btn:focus {
+  outline: 3px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
+
+.pipeline-modal-btn-primary {
+  background: #10B981;
+  color: white;
+  flex: 1;
+  min-width: 180px;
+}
+
+.pipeline-modal-btn-primary:hover {
+  background: #059669;
+}
+
+.pipeline-modal-btn-secondary {
+  background: #F59E0B;
+  color: white;
+  flex: 1;
+  min-width: 180px;
+}
+
+.pipeline-modal-btn-secondary:hover {
+  background: #D97706;
+}
+
+.pipeline-modal-btn-dismiss {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  backdrop-filter: blur(10px);
+}
+
+.pipeline-modal-btn-dismiss:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .pipeline-modal-container {
+    padding: 32px 24px;
+  }
+  
+  .pipeline-modal-title {
+    font-size: 24px;
+  }
+  
+  .pipeline-modal-buttons {
+    flex-direction: column;
+  }
+  
+  .pipeline-modal-btn-primary,
+  .pipeline-modal-btn-secondary {
+    width: 100%;
+  }
+}

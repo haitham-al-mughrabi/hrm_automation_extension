@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "GitLab Pipeline Scheduler",
+  "version": "1.0",
+  "description": "Schedule GitLab pipeline triggers with confirmation",
+  "permissions": [
+    "alarms",
+    "storage",
+    "notifications",
+    "activeTab",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://gitlab.com/*",
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["confirmation.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
