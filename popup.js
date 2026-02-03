@@ -230,6 +230,9 @@ function displayPipelines(pipelines) {
   // Attach event listeners
   pipelines.forEach((pipeline) => {
     document
+      .getElementById(`run-${pipeline.id}`)
+      .addEventListener("click", () => runPipelineNow(pipeline.id));
+    document
       .getElementById(`update-${pipeline.id}`)
       .addEventListener("click", () => showFormView(pipeline));
     document
@@ -269,6 +272,12 @@ function createPipelineCard(pipeline) {
         </div>
       </div>
       <div class="pipeline-actions">
+        <button class="action-btn run" id="run-${pipeline.id}">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M10.804 8 5 4.633v6.734L10.804 8zm.792-.696a.802.802 0 0 1 0 1.392l-6.363 3.692C4.713 12.69 4 12.345 4 11.692V4.308c0-.653.713-.998 1.233-.696l6.363 3.692z"/>
+          </svg>
+          Run Now
+        </button>
         <button class="action-btn update" id="update-${pipeline.id}">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
             <path d="M12.146.146a.5.5 0 01.708 0l3 3a.5.5 0 010 .708l-10 10a.5.5 0 01-.168.11l-5 2a.5.5 0 01-.65-.65l2-5a.5.5 0 01.11-.168l10-10zM11.207 2.5L13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 01.5.5v.5h.5a.5.5 0 01.5.5v.5h.293l6.293-6.293z"/>
@@ -521,6 +530,11 @@ async function savePipeline() {
       }, 1000);
     });
   });
+}
+
+function runPipelineNow(id) {
+  chrome.runtime.sendMessage({ action: "triggerNow", pipelineId: id });
+  showStatus("✓ Pipeline trigger sent!", "success");
 }
 
 function deletePipeline(id) {

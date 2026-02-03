@@ -80,6 +80,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.action === "confirmPipeline") {
     handlePipelineConfirmation(request.pipelineId, request.response);
     // Don't send response - just handle it
+  } else if (request.action === "triggerNow") {
+    chrome.storage.local.get({ pipelines: [] }, (data) => {
+      const pipeline = data.pipelines.find((p) => p.id === request.pipelineId);
+      if (pipeline) {
+        triggerPipeline(pipeline);
+      }
+    });
   }
   // Note: We don't return true because we don't need async response
 });

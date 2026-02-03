@@ -301,6 +301,15 @@ header h1 {
   border-color: var(--error);
 }
 
+.action-btn.run {
+  color: var(--success);
+}
+
+.action-btn.run:hover {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: var(--success);
+}
+
 /* Empty State */
 .empty-state {
   display: flex;
