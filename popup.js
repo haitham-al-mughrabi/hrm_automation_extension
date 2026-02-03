@@ -60,13 +60,22 @@ async function encryptValue(value) {
 }
 
 async function decryptValue(encryptedValue) {
+  if (!encryptedValue || typeof encryptedValue !== "string")
+    return encryptedValue;
+  if (encryptedValue.length < 16) return encryptedValue;
+
   try {
     const key = await getOrCreateEncryptionKey();
 
-    // Decode from base64
-    const combined = Uint8Array.from(atob(encryptedValue), (c) =>
-      c.charCodeAt(0),
-    );
+    let combined;
+    try {
+      combined = Uint8Array.from(atob(encryptedValue), (c) => c.charCodeAt(0));
+    } catch (e) {
+      return encryptedValue;
+    }
+
+    if (combined.length < 13) return encryptedValue;
+
     const iv = combined.slice(0, 12);
     const encrypted = combined.slice(12);
 
@@ -78,8 +87,8 @@ async function decryptValue(encryptedValue) {
 
     return new TextDecoder().decode(decrypted);
   } catch (error) {
-    console.error("Decryption error:", error);
-    return encryptedValue; // Fallback to original if error
+    console.warn("Decryption failed, assuming plain text:", error);
+    return encryptedValue;
   }
 }
 
