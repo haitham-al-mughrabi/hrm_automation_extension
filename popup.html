@@ -341,6 +341,61 @@
             </div>
           </div>
 
+          <!-- Pipeline Variables Section -->
+          <div class="form-group">
+            <label>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="currentColor"
+              >
+                <path
+                  d="M2 3.5a.5.5 0 01.5-.5h11a.5.5 0 010 1h-11a.5.5 0 01-.5-.5zm0 3a.5.5 0 01.5-.5h6a.5.5 0 010 1h-6a.5.5 0 01-.5-.5zm0 3a.5.5 0 01.5-.5h11a.5.5 0 010 1h-11a.5.5 0 01-.5-.5zm0 3a.5.5 0 01.5-.5h6a.5.5 0 010 1h-6a.5.5 0 01-.5-.5z"
+                />
+              </svg>
+              Pipeline Variables
+            </label>
+            <span class="helper-text"
+              >Optional variables to pass to the pipeline (e.g., ENVIRONMENT,
+              VERSION)</span
+            >
+
+            <!-- Variables List -->
+            <div id="variablesList" class="variables-list">
+              <!-- Variables will be added here dynamically -->
+            </div>
+
+            <!-- Add Variable Form -->
+            <div class="variable-form">
+              <input
+                type="text"
+                id="variableKey"
+                placeholder="Variable Key (e.g., ENVIRONMENT)"
+                class="variable-input"
+              />
+              <input
+                type="text"
+                id="variableValue"
+                placeholder="Variable Value (e.g., production)"
+                class="variable-input"
+              />
+              <button class="btn btn-small" id="addVariableBtn" type="button">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 16 16"
+                  fill="currentColor"
+                >
+                  <path
+                    d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z"
+                  />
+                </svg>
+                Add
+              </button>
+            </div>
+          </div>
+
           <div class="form-group">
             <label class="toggle-label">
               <input type="checkbox" id="isActive" checked />

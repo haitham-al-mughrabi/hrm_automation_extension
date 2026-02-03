@@ -1,0 +1,82 @@
+stages:
+  - build-base
+  - test
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+  # The specific tag for your heavy setup image
+  BASE_IMAGE_TAG: $CI_REGISTRY_IMAGE/qa-base:latest
+
+# --- JOB 1: BASE IMAGE BUILDER ---
+# Builds/Pushes only when infrastructure files change.
+# This saves minutes of download time on your daily runs.
+build-base-image:
+  stage: build-base
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - echo "Building Base Image (Heavy Setup)..."
+    - docker build -f Dockerfile.base -t $BASE_IMAGE_TAG .
+    - docker push $BASE_IMAGE_TAG
+  rules:
+    # Never build on scheduled runs
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    # Never build on trigger token executions
+    - if: $CI_PIPELINE_SOURCE == "trigger"
+      when: never
+    # Rebuild if infrastructure files change
+    - changes:
+        - Dockerfile.base
+        - requirements.txt
+    # Allow manual triggering via the "Run Pipeline" button
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: manual
+
+# --- JOB 2: DAILY TEST RUNNER ---
+# Runs your tests using the pre-built base.
+robot-tests:
+  stage: test
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  before_script:
+    - docker info
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - mkdir -p results/browser/video
+    - chmod -R 777 results
+    # 1. Pull the cached environment (Downloads quickly)
+    - docker pull $BASE_IMAGE_TAG
+    
+    # 2. Build the 'daily' runner
+    # We pass the BASE_IMAGE_TAG so Dockerfile.daily knows what to use for FROM
+    - docker build --build-arg BASE_IMAGE_TAG=$BASE_IMAGE_TAG -f Dockerfile.daily -t daily-runner .
+    
+    # 3. Run the tests
+    - |
+      # Capture relevant variables into a file to pass to Docker
+      # This handles your 4 main variables + any custom ones you add in the extension
+      env | grep -E "^(USERNAME|PASSWORD|DESIRED_PROJECT_NAME|DESIRED_HOURS)" > .env.triggered || true
+      
+      docker run --rm \
+        --env-file .env.triggered \
+        -v "$(pwd)/results:/app/results" \
+        daily-runner
+  artifacts:
+    when: always
+    paths:
+      - results/log.html
+      - results/report.html
+      - results/output.xml
+      - results/browser/video/**/*.webm
+    expire_in: 2 days
+  rules:
+    # Run on Schedule (Daily)
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    # Run on Trigger Token
+    - if: $CI_PIPELINE_SOURCE == "trigger"
