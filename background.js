@@ -544,7 +544,10 @@ function updateExecutionHistory(executionId, updates) {
     
     if (index !== -1) {
       history[index] = { ...history[index], ...updates };
-      chrome.storage.local.set({ executionHistory: history });
+      chrome.storage.local.set({ executionHistory: history }, () => {
+        // Notify popup to refresh
+        chrome.runtime.sendMessage({ action: 'historyUpdated' }).catch(() => {});
+      });
     }
   });
 }
@@ -703,35 +706,55 @@ async function triggerLocalExecution(pipeline) {
     const response = await fetch('http://localhost:5000/trigger', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ variables })
+      body: JSON.stringify({ 
+        variables,
+        project_dir: pipeline.localProjectDir || '',
+        test_path: pipeline.localTestPath || 'Tests/Test.robot',
+        test_type: pipeline.localTestType || 'file'
+      })
     });
     
     const result = await response.json();
     console.log('Local execution started:', result);
+    console.log('Execution ID from server:', result.execution_id);
     
-    // Store execution in history
-    const execution = {
-      id: Date.now(),
-      pipelineName: pipeline.name,
-      pipelineId: result.execution_id,
-      pipelineUrl: null,
-      projectId: null,
-      status: 'running',
-      timestamp: Date.now(),
-      results: null,
-      executionType: 'local'
-    };
-    
-    saveExecutionHistory(execution);
-    startLocalMonitoring(execution);
-    
-    chrome.notifications.create({
-      type: "basic",
-      iconUrl: "icons/icon128.png",
-      title: `${pipeline.name} - Started ✓`,
-      message: 'Local test execution started',
-      priority: 2,
-    });
+    // Check if execution actually started
+    if (result.status === 'running') {
+      // Store execution in history
+      const execution = {
+        id: Date.now(),
+        pipelineName: pipeline.name,
+        pipelineId: result.execution_id,
+        pipelineUrl: null,
+        projectId: null,
+        status: 'running',
+        timestamp: Date.now(),
+        results: null,
+        executionType: 'local'
+      };
+      
+      console.log('Created execution object:', execution);
+      
+      saveExecutionHistory(execution);
+      startLocalMonitoring(execution);
+      
+      chrome.notifications.create({
+        type: "basic",
+        iconUrl: "icons/icon128.png",
+        title: `${pipeline.name} - Started ✓`,
+        message: `Execution started\nType: ${pipeline.localTestType}\nPath: ${pipeline.localTestPath}`,
+        priority: 2,
+      });
+    } else {
+      // Execution failed to start
+      chrome.notifications.create({
+        type: "basic",
+        iconUrl: "icons/icon128.png",
+        title: `${pipeline.name} - Failed to Start ✗`,
+        message: result.error || 'Failed to start execution',
+        priority: 2,
+      });
+    }
     
   } catch (error) {
     console.error('Failed to trigger local execution:', error);
@@ -753,7 +776,10 @@ function startLocalMonitoring(execution) {
       const response = await fetch(`http://localhost:5000/status/${execution.pipelineId}`);
       const data = await response.json();
       
+      console.log('Local execution status:', data);
+      
       if (data.completed) {
+        console.log('Execution completed! Clearing interval and updating history');
         clearInterval(checkInterval);
         
         updateExecutionHistory(execution.id, {
@@ -761,16 +787,27 @@ function startLocalMonitoring(execution) {
           results: data.results
         });
         
+        // Show notification with error details if failed
+        let message = '';
+        if (data.status === 'success') {
+          message = data.results ? 
+            `Project: ${data.results.CAPTURED_PROJECT_NAME}\nHours: ${data.results.CAPTURED_HOURS}` :
+            'Execution completed';
+        } else {
+          message = data.error || 'Execution failed';
+        }
+        
         chrome.notifications.create({
           type: "basic",
           iconUrl: "icons/icon128.png",
           title: `${execution.pipelineName} - ${data.status === 'success' ? 'Completed ✓' : 'Failed ✗'}`,
-          message: data.results ? 
-            `Project: ${data.results.CAPTURED_PROJECT_NAME}\nHours: ${data.results.CAPTURED_HOURS}` :
-            'Execution completed',
+          message: message,
           priority: 2,
         });
+      } else {
+        console.log('Execution still running...');
       }
+      
     } catch (error) {
       console.error('Local monitoring error:', error);
       clearInterval(checkInterval);

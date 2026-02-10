@@ -50,6 +50,10 @@
               </div>
             </div>
             <div class="header-right">
+              <div id="serverStatus" class="server-status" style="display: none;">
+                <span class="status-dot"></span>
+                <span class="status-text">Local Server</span>
+              </div>
               <button class="btn-header-add" id="addNewBtn">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                   <path d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z"/>
@@ -302,6 +306,44 @@
               Branch/Ref
             </label>
             <input type="text" id="branchRef" placeholder="main" value="main" />
+          </div>
+
+          <!-- Local Execution Settings -->
+          <div class="form-group" id="localProjectDirGroup" style="display: none;">
+            <label for="localProjectDir">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M1.75 1A1.75 1.75 0 000 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0016 13.25v-8.5A1.75 1.75 0 0014.25 3H7.5a.25.25 0 01-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1H1.75z"/>
+              </svg>
+              Project Directory
+            </label>
+            <input type="text" id="localProjectDir" placeholder="e.g., /Users/username/hrm_automation" />
+            <span class="helper-text">Absolute path to your Robot Framework project</span>
+          </div>
+
+          <div class="form-group" id="localTestTypeGroup" style="display: none;">
+            <label for="localTestType">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M2 2a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V2zm2 0v12h8V2H4z"/>
+              </svg>
+              Test Type
+            </label>
+            <select id="localTestType">
+              <option value="test">Single Test</option>
+              <option value="suite">Test Suite</option>
+              <option value="file">Test File</option>
+              <option value="directory">Directory</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="localTestPathGroup" style="display: none;">
+            <label for="localTestPath">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M2.5 3.5a.5.5 0 010-1h11a.5.5 0 010 1h-11zm0 3a.5.5 0 010-1h6a.5.5 0 010 1h-6zm0 3a.5.5 0 010-1h11a.5.5 0 010 1h-11zm0 3a.5.5 0 010-1h6a.5.5 0 010 1h-6z"/>
+              </svg>
+              Test Path/Name
+            </label>
+            <input type="text" id="localTestPath" placeholder="e.g., Tests/Test.robot" />
+            <span class="helper-text">Path or name based on test type</span>
           </div>
 
           <div class="form-group">

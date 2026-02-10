@@ -96,10 +96,77 @@ function maskValue(value) {
   return "•".repeat(Math.min(value.length, 12));
 }
 
+async function checkServerStatus() {
+  const statusEl = document.getElementById('serverStatus');
+  const statusDot = statusEl.querySelector('.status-dot');
+  const statusText = statusEl.querySelector('.status-text');
+  
+  try {
+    const response = await fetch('http://localhost:5000/health', {
+      method: 'GET',
+      signal: AbortSignal.timeout(2000)
+    });
+    
+    if (response.ok) {
+      statusEl.classList.remove('offline');
+      statusEl.classList.add('online');
+      statusText.textContent = 'Server Online';
+      statusEl.style.display = 'flex';
+    } else {
+      throw new Error('Server not healthy');
+    }
+  } catch (error) {
+    statusEl.classList.remove('online');
+    statusEl.classList.add('offline');
+    statusText.textContent = 'Server Offline';
+    statusEl.style.display = 'flex';
+  }
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   loadPipelines();
   loadResults();
   setupTabNavigation();
+  
+  // Listen for history updates from background
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === 'historyUpdated') {
+      console.log('History updated! Reloading results...');
+      loadResults();
+    }
+  });
+  
+  // Auto-refresh results every 3 seconds if on Results tab
+  setInterval(() => {
+    const resultsTab = document.querySelector('[data-tab="results"]');
+    if (resultsTab && resultsTab.classList.contains('active')) {
+      loadResults();
+    }
+  }, 3000);
+  
+  // Check server status on load
+  checkServerStatus();
+  setInterval(checkServerStatus, 5000); // Check every 5 seconds
+
+  // Server status click handler
+  document.getElementById('serverStatus').addEventListener('click', function() {
+    const isOnline = this.classList.contains('online');
+    if (isOnline) {
+      alert('Local server is running on http://localhost:5000\n\nServer is ready to execute tests.');
+    } else {
+      const instructions = 'Local server is not running.\n\n' +
+        'To start the server:\n\n' +
+        'Mac/Linux:\n' +
+        '  cd /path/to/hrm_automation\n' +
+        '  ./start_server.sh\n\n' +
+        'Windows:\n' +
+        '  cd \\path\\to\\hrm_automation\n' +
+        '  start_server.bat\n\n' +
+        'Or manually:\n' +
+        '  python3 local_server.py';
+      alert(instructions);
+    }
+  });
 
   // Tab navigation
   function setupTabNavigation() {
@@ -177,15 +244,45 @@ function setupEventListeners() {
     const gitlabUrlGroup = document.getElementById("gitlabUrlGroup");
     const triggerTokenGroup = document.getElementById("triggerTokenGroup");
     const branchRefGroup = document.getElementById("branchRefGroup");
+    const localProjectDirGroup = document.getElementById("localProjectDirGroup");
+    const localTestTypeGroup = document.getElementById("localTestTypeGroup");
+    const localTestPathGroup = document.getElementById("localTestPathGroup");
     
     if (type === "local") {
       gitlabUrlGroup.style.display = "none";
       triggerTokenGroup.style.display = "none";
       branchRefGroup.style.display = "none";
+      localProjectDirGroup.style.display = "block";
+      localTestTypeGroup.style.display = "block";
+      localTestPathGroup.style.display = "block";
     } else {
       gitlabUrlGroup.style.display = "block";
       triggerTokenGroup.style.display = "block";
       branchRefGroup.style.display = "block";
+      localProjectDirGroup.style.display = "none";
+      localTestTypeGroup.style.display = "none";
+      localTestPathGroup.style.display = "none";
+    }
+  });
+
+  // Test type change - update placeholder
+  document.getElementById("localTestType").addEventListener("change", function() {
+    const type = this.value;
+    const pathInput = document.getElementById("localTestPath");
+    const helperText = pathInput.nextElementSibling;
+    
+    if (type === "test") {
+      pathInput.placeholder = "e.g., My Test Case Name";
+      helperText.textContent = "Test case name (uses --test option)";
+    } else if (type === "suite") {
+      pathInput.placeholder = "e.g., My Suite Name";
+      helperText.textContent = "Suite name (uses --suite option)";
+    } else if (type === "file") {
+      pathInput.placeholder = "e.g., Tests/Test.robot";
+      helperText.textContent = "Path to .robot file";
+    } else {
+      pathInput.placeholder = "e.g., Tests/";
+      helperText.textContent = "Path to directory containing tests";
     }
   });
 
@@ -423,17 +520,23 @@ function createPipelineCard(pipeline) {
 function populateForm(pipeline) {
   document.getElementById("pipelineName").value = pipeline.name;
   document.getElementById("executionType").value = pipeline.executionType || "gitlab";
-  document.getElementById("gitlabUrl").value = pipeline.gitlabUrl;
+  document.getElementById("gitlabUrl").value = pipeline.gitlabUrl || "";
   document.getElementById("triggerToken").value = pipeline.triggerToken
     ? "********"
     : "";
-  document.getElementById("branchRef").value = pipeline.branchRef;
+  document.getElementById("branchRef").value = pipeline.branchRef || "main";
+  document.getElementById("localProjectDir").value = pipeline.localProjectDir || "";
+  document.getElementById("localTestType").value = pipeline.localTestType || "test";
+  document.getElementById("localTestPath").value = pipeline.localTestPath || "";
 
   // Show/hide fields based on execution type
   const type = pipeline.executionType || "gitlab";
   document.getElementById("gitlabUrlGroup").style.display = type === "local" ? "none" : "block";
   document.getElementById("triggerTokenGroup").style.display = type === "local" ? "none" : "block";
   document.getElementById("branchRefGroup").style.display = type === "local" ? "none" : "block";
+  document.getElementById("localProjectDirGroup").style.display = type === "local" ? "block" : "none";
+  document.getElementById("localTestTypeGroup").style.display = type === "local" ? "block" : "none";
+  document.getElementById("localTestPathGroup").style.display = type === "local" ? "block" : "none";
 
   // Parse time with seconds
   var timeParts = pipeline.triggerTime.split(":");
@@ -463,6 +566,9 @@ function clearForm() {
   document.getElementById("gitlabUrl").value = "";
   document.getElementById("triggerToken").value = "";
   document.getElementById("branchRef").value = "main";
+  document.getElementById("localProjectDir").value = "";
+  document.getElementById("localTestType").value = "test";
+  document.getElementById("localTestPath").value = "";
   document.getElementById("triggerHours").value = "09";
   document.getElementById("triggerMinutes").value = "00";
   document.getElementById("triggerSeconds").value = "00";
@@ -472,6 +578,9 @@ function clearForm() {
   document.getElementById("gitlabUrlGroup").style.display = "block";
   document.getElementById("triggerTokenGroup").style.display = "block";
   document.getElementById("branchRefGroup").style.display = "block";
+  document.getElementById("localProjectDirGroup").style.display = "none";
+  document.getElementById("localTestTypeGroup").style.display = "none";
+  document.getElementById("localTestPathGroup").style.display = "none";
 
   document.querySelectorAll(".day-btn").forEach(function (btn) {
     var day = parseInt(btn.dataset.day);
@@ -598,6 +707,9 @@ async function savePipeline() {
   var gitlabUrl = document.getElementById("gitlabUrl").value.trim();
   var triggerToken = document.getElementById("triggerToken").value.trim();
   var branchRef = document.getElementById("branchRef").value.trim() || "main";
+  var localProjectDir = document.getElementById("localProjectDir").value.trim();
+  var localTestType = document.getElementById("localTestType").value;
+  var localTestPath = document.getElementById("localTestPath").value.trim();
 
   // Get time with seconds
   var hours = document.getElementById("triggerHours").value.padStart(2, "0");
@@ -626,6 +738,11 @@ async function savePipeline() {
     showStatus("Please fill in GitLab URL and trigger token", "error");
     return;
   }
+  
+  if (executionType === "local" && (!localProjectDir || !localTestPath)) {
+    showStatus("Please fill in project directory and test path", "error");
+    return;
+  }
 
   chrome.storage.local.get({ pipelines: [] }, async function (data) {
     var pipelines = data.pipelines;
@@ -649,6 +766,9 @@ async function savePipeline() {
       gitlabUrl: gitlabUrl,
       triggerToken: finalTriggerToken,
       branchRef: branchRef,
+      localProjectDir: localProjectDir,
+      localTestType: localTestType,
+      localTestPath: localTestPath,
       triggerTime: triggerTime,
       activeDays: activeDays,
       isActive: isActive,
@@ -815,7 +935,7 @@ function loadResults() {
                         result.status === 'failed' ? '✗ Failed' : '⟳ Running';
 
       return `
-        <div class="result-card">
+        <div class="result-card" data-result-id="${result.id}">
           <div class="result-header">
             <div class="result-title">${escapeHtml(result.pipelineName)}</div>
             <span class="result-status ${statusClass}">${statusText}</span>
@@ -823,7 +943,7 @@ function loadResults() {
           
           <div class="result-meta">
             <div>📅 ${date.toLocaleDateString()} ${date.toLocaleTimeString()}</div>
-            <div>🔗 Pipeline #${result.pipelineId}</div>
+            <div>🔗 ${result.executionType === 'local' ? 'Local' : 'GitLab'} #${result.pipelineId}</div>
           </div>
 
           ${result.results ? `
@@ -842,14 +962,65 @@ function loadResults() {
               </div>
             </div>
           ` : ''}
-
-          ${result.pipelineUrl ? `
-            <a href="${result.pipelineUrl}" target="_blank" class="result-link">
-              View in GitLab →
-            </a>
-          ` : ''}
+          
+          <div class="result-actions">
+            <button class="btn-view-details" data-result-id="${result.id}">
+              View Details
+            </button>
+            ${result.pipelineUrl ? `
+              <a href="${result.pipelineUrl}" target="_blank" class="result-link">
+                View in GitLab →
+              </a>
+            ` : ''}
+          </div>
         </div>
       `;
     }).join('');
+    
+    // Add click handlers for view details buttons
+    document.querySelectorAll('.btn-view-details').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const resultId = parseInt(this.dataset.resultId);
+        showResultDetails(resultId, history);
+      });
+    });
+  });
+}
+
+async function showResultDetails(resultId, history) {
+  const result = history.find(r => r.id === resultId);
+  if (!result) return;
+  
+  // Get the automation to show variables
+  chrome.storage.local.get({ pipelines: [] }, async (data) => {
+    const pipeline = data.pipelines.find(p => p.name === result.pipelineName);
+    
+    let details = `Execution Details\n\n`;
+    details += `Name: ${result.pipelineName}\n`;
+    details += `Type: ${result.executionType === 'local' ? 'Local' : 'GitLab'}\n`;
+    details += `Status: ${result.status}\n`;
+    details += `Time: ${new Date(result.timestamp).toLocaleString()}\n\n`;
+    
+    if (pipeline && pipeline.variables && pipeline.variables.length > 0) {
+      details += `Variables Used:\n`;
+      for (const v of pipeline.variables) {
+        const value = await decryptValue(v.encryptedValue);
+        details += `  ${v.key}: ${maskValue(value)}\n`;
+      }
+      details += `\n`;
+    }
+    
+    if (result.results) {
+      details += `Results:\n`;
+      details += `  Project: ${result.results.CAPTURED_PROJECT_NAME || 'N/A'}\n`;
+      details += `  Hours: ${result.results.CAPTURED_HOURS || 'N/A'}\n`;
+      details += `  Status: ${result.results.CAPTURED_STATUS || 'N/A'}\n`;
+    }
+    
+    if (result.pipelineUrl) {
+      details += `\nGitLab URL: ${result.pipelineUrl}`;
+    }
+    
+    alert(details);
   });
 }
