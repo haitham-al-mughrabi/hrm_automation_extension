@@ -100,7 +100,35 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     chrome.storage.local.get({ pipelines: [] }, (data) => {
       const pipeline = data.pipelines.find((p) => p.id === request.pipelineId);
       if (pipeline) {
-        triggerPipeline(pipeline);
+        if (pipeline.executionType === "local") {
+          triggerLocalExecution(pipeline);
+        } else {
+          triggerPipeline(pipeline);
+        }
+      }
+    });
+  } else if (request.action === "triggerAlternate") {
+    chrome.storage.local.get({ pipelines: [] }, (data) => {
+      const pipeline = data.pipelines.find((p) => p.id === request.pipelineId);
+      if (pipeline) {
+        // Run with opposite execution type
+        if (pipeline.executionType === "local") {
+          // Local automation trying to run on GitLab
+          if (!pipeline.gitlabUrl || !pipeline.triggerToken) {
+            chrome.notifications.create({
+              type: "basic",
+              iconUrl: "icons/icon128.png",
+              title: `${pipeline.name} - Error ✗`,
+              message: 'GitLab URL and token not configured. Edit automation to add them.',
+              priority: 2,
+            });
+            return;
+          }
+          triggerPipeline(pipeline);
+        } else {
+          // GitLab automation trying to run locally
+          triggerLocalExecution(pipeline);
+        }
       }
     });
   }
@@ -453,6 +481,22 @@ async function triggerPipeline(pipeline) {
     })
     .then((result) => {
       console.log("Pipeline triggered successfully:", result);
+      
+      // Store execution in history and start monitoring
+      const execution = {
+        id: Date.now(),
+        pipelineName: pipeline.name,
+        pipelineId: result.id,
+        pipelineUrl: result.web_url,
+        projectId: extractProjectId(pipeline.gitlabUrl),
+        status: 'running',
+        timestamp: Date.now(),
+        results: null
+      };
+      
+      saveExecutionHistory(execution);
+      startMonitoring(execution);
+      
       chrome.notifications.create({
         type: "basic",
         iconUrl: "icons/icon128.png",
@@ -473,4 +517,266 @@ async function triggerPipeline(pipeline) {
     });
 }
 
+function extractProjectId(gitlabUrl) {
+  // Extract project ID from URL like: https://gitlab.com/api/v4/projects/PROJECT_ID/trigger/pipeline
+  const match = gitlabUrl.match(/projects\/(\d+)\//);
+  return match ? match[1] : null;
+}
+
+function saveExecutionHistory(execution) {
+  chrome.storage.local.get({ executionHistory: [] }, (data) => {
+    const history = data.executionHistory || [];
+    history.unshift(execution); // Add to beginning
+    
+    // Keep only last 50 executions
+    if (history.length > 50) {
+      history.splice(50);
+    }
+    
+    chrome.storage.local.set({ executionHistory: history });
+  });
+}
+
+function updateExecutionHistory(executionId, updates) {
+  chrome.storage.local.get({ executionHistory: [] }, (data) => {
+    const history = data.executionHistory || [];
+    const index = history.findIndex(e => e.id === executionId);
+    
+    if (index !== -1) {
+      history[index] = { ...history[index], ...updates };
+      chrome.storage.local.set({ executionHistory: history });
+    }
+  });
+}
+
+function startMonitoring(execution) {
+  console.log('Starting pipeline monitoring:', execution.pipelineId);
+  
+  const checkInterval = setInterval(async () => {
+    try {
+      const status = await checkPipelineStatus(execution);
+      
+      if (status === 'success' || status === 'failed') {
+        clearInterval(checkInterval);
+        
+        // Try to fetch results
+        const results = await fetchPipelineResults(execution);
+        
+        updateExecutionHistory(execution.id, {
+          status: status,
+          results: results
+        });
+        
+        // Show notification
+        chrome.notifications.create({
+          type: "basic",
+          iconUrl: "icons/icon128.png",
+          title: `${execution.pipelineName} - ${status === 'success' ? 'Completed ✓' : 'Failed ✗'}`,
+          message: results ? 
+            `Project: ${results.CAPTURED_PROJECT_NAME}\nHours: ${results.CAPTURED_HOURS}` :
+            'Click to view details',
+          priority: 2,
+        });
+      }
+    } catch (error) {
+      console.error('Monitoring error:', error);
+      clearInterval(checkInterval);
+    }
+  }, 30000); // Check every 30 seconds
+  
+  // Stop monitoring after 2 hours
+  setTimeout(() => clearInterval(checkInterval), 2 * 60 * 60 * 1000);
+}
+
+async function checkPipelineStatus(execution) {
+  if (!execution.projectId || !execution.pipelineId) return null;
+  
+  const apiUrl = `https://gitlab.com/api/v4/projects/${execution.projectId}/pipelines/${execution.pipelineId}`;
+  
+  try {
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      console.error(`Failed to check status: ${response.status} ${response.statusText}`);
+      console.error('Note: If project is private, you need to add GitLab API token support');
+      return null;
+    }
+    const data = await response.json();
+    console.log('Pipeline status:', data.status);
+    return data.status; // 'running', 'success', 'failed', etc.
+  } catch (error) {
+    console.error('Failed to check pipeline status:', error);
+    return null;
+  }
+}
+
+async function fetchPipelineResults(execution) {
+  if (!execution.projectId || !execution.pipelineId) return null;
+  
+  try {
+    // Get jobs for this pipeline
+    const jobsUrl = `https://gitlab.com/api/v4/projects/${execution.projectId}/pipelines/${execution.pipelineId}/jobs`;
+    const jobsResponse = await fetch(jobsUrl);
+    
+    if (!jobsResponse.ok) {
+      console.error(`Failed to fetch jobs: ${jobsResponse.status}`);
+      return null;
+    }
+    
+    const jobs = await jobsResponse.json();
+    console.log('Found jobs:', jobs.map(j => j.name));
+    
+    // Find the test job (usually the last one)
+    const testJob = jobs.find(job => job.name === 'robot-tests') || jobs[0];
+    
+    if (!testJob) {
+      console.error('No test job found');
+      return null;
+    }
+    
+    console.log('Fetching artifact from job:', testJob.id);
+    
+    // Try to download the dotenv artifact
+    const artifactUrl = `https://gitlab.com/api/v4/projects/${execution.projectId}/jobs/${testJob.id}/artifacts/results/pipeline.env`;
+    const artifactResponse = await fetch(artifactUrl);
+    
+    if (!artifactResponse.ok) {
+      console.error(`Failed to fetch artifact: ${artifactResponse.status}`);
+      console.error('Artifact URL:', artifactUrl);
+      return null;
+    }
+    
+    const envText = await artifactResponse.text();
+    console.log('Artifact content:', envText);
+    
+    // Parse the .env file
+    const results = {};
+    envText.split('\n').forEach(line => {
+      const [key, value] = line.split('=');
+      if (key && value) {
+        results[key.trim()] = value.trim();
+      }
+    });
+    
+    console.log('Parsed results:', results);
+    return results;
+  } catch (error) {
+    console.error('Failed to fetch pipeline results:', error);
+    return null;
+  }
+}
+
 console.log("Service worker started at:", new Date().toString());
+
+// Local execution functions
+async function triggerLocalExecution(pipeline) {
+  console.log("Triggering local execution:", pipeline.name);
+  
+  // Check if local server is running
+  try {
+    const healthCheck = await fetch('http://localhost:5000/health');
+    if (!healthCheck.ok) throw new Error('Server not responding');
+  } catch (error) {
+    console.error('Local server not running:', error);
+    chrome.notifications.create({
+      type: "basic",
+      iconUrl: "icons/icon128.png",
+      title: `${pipeline.name} - Error ✗`,
+      message: 'Local server not running. Start it with: python local_server.py',
+      priority: 2,
+    });
+    return;
+  }
+  
+  // Prepare variables
+  const variables = {};
+  if (pipeline.variables && pipeline.variables.length > 0) {
+    for (const variable of pipeline.variables) {
+      if (variable.encryptedValue) {
+        const decryptedValue = await decryptValue(variable.encryptedValue);
+        variables[variable.key] = decryptedValue;
+      }
+    }
+  }
+  
+  // Trigger local execution
+  try {
+    const response = await fetch('http://localhost:5000/trigger', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ variables })
+    });
+    
+    const result = await response.json();
+    console.log('Local execution started:', result);
+    
+    // Store execution in history
+    const execution = {
+      id: Date.now(),
+      pipelineName: pipeline.name,
+      pipelineId: result.execution_id,
+      pipelineUrl: null,
+      projectId: null,
+      status: 'running',
+      timestamp: Date.now(),
+      results: null,
+      executionType: 'local'
+    };
+    
+    saveExecutionHistory(execution);
+    startLocalMonitoring(execution);
+    
+    chrome.notifications.create({
+      type: "basic",
+      iconUrl: "icons/icon128.png",
+      title: `${pipeline.name} - Started ✓`,
+      message: 'Local test execution started',
+      priority: 2,
+    });
+    
+  } catch (error) {
+    console.error('Failed to trigger local execution:', error);
+    chrome.notifications.create({
+      type: "basic",
+      iconUrl: "icons/icon128.png",
+      title: `${pipeline.name} - Error ✗`,
+      message: `Failed to start: ${error.message}`,
+      priority: 2,
+    });
+  }
+}
+
+function startLocalMonitoring(execution) {
+  console.log('Starting local execution monitoring:', execution.pipelineId);
+  
+  const checkInterval = setInterval(async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/status/${execution.pipelineId}`);
+      const data = await response.json();
+      
+      if (data.completed) {
+        clearInterval(checkInterval);
+        
+        updateExecutionHistory(execution.id, {
+          status: data.status,
+          results: data.results
+        });
+        
+        chrome.notifications.create({
+          type: "basic",
+          iconUrl: "icons/icon128.png",
+          title: `${execution.pipelineName} - ${data.status === 'success' ? 'Completed ✓' : 'Failed ✗'}`,
+          message: data.results ? 
+            `Project: ${data.results.CAPTURED_PROJECT_NAME}\nHours: ${data.results.CAPTURED_HOURS}` :
+            'Execution completed',
+          priority: 2,
+        });
+      }
+    } catch (error) {
+      console.error('Local monitoring error:', error);
+      clearInterval(checkInterval);
+    }
+  }, 5000); // Check every 5 seconds for local execution
+  
+  // Stop monitoring after 30 minutes
+  setTimeout(() => clearInterval(checkInterval), 30 * 60 * 1000);
+}

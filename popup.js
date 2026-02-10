@@ -98,12 +98,58 @@ function maskValue(value) {
 
 document.addEventListener("DOMContentLoaded", function () {
   loadPipelines();
+  loadResults();
+  setupTabNavigation();
+
+  // Tab navigation
+  function setupTabNavigation() {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tabName = btn.dataset.tab;
+        
+        // Update active tab button
+        tabBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Update active tab content
+        document.querySelectorAll('.tab-content').forEach(content => {
+          content.classList.remove('active');
+        });
+        
+        if (tabName === 'pipelines') {
+          document.getElementById('pipelinesTab').classList.add('active');
+        } else if (tabName === 'results') {
+          document.getElementById('resultsTab').classList.add('active');
+          loadResults(); // Refresh results when tab is opened
+        }
+      });
+    });
+  }
+
+  // Clear results history
+  document.getElementById('clearResultsBtn')?.addEventListener('click', () => {
+    if (confirm('Clear all execution history?')) {
+      chrome.storage.local.set({ executionHistory: [] }, () => {
+        loadResults();
+        showStatus('History cleared', 'success');
+      });
+    }
+  });
+  
+  // Close dropdowns when clicking outside
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.run-menu').forEach(menu => {
+      menu.classList.remove('show');
+    });
+  });
+  
+  loadPipelines();
   setupEventListeners();
 
   // Set current year in footer
   var currentYear = new Date().getFullYear();
   document.getElementById("currentYear").textContent = currentYear;
-  document.getElementById("formYear").textContent = currentYear;
 });
 
 function setupEventListeners() {
@@ -122,6 +168,24 @@ function setupEventListeners() {
       )
     ) {
       showMainView();
+    }
+  });
+
+  // Execution type change
+  document.getElementById("executionType").addEventListener("change", function() {
+    const type = this.value;
+    const gitlabUrlGroup = document.getElementById("gitlabUrlGroup");
+    const triggerTokenGroup = document.getElementById("triggerTokenGroup");
+    const branchRefGroup = document.getElementById("branchRefGroup");
+    
+    if (type === "local") {
+      gitlabUrlGroup.style.display = "none";
+      triggerTokenGroup.style.display = "none";
+      branchRefGroup.style.display = "none";
+    } else {
+      gitlabUrlGroup.style.display = "block";
+      triggerTokenGroup.style.display = "block";
+      branchRefGroup.style.display = "block";
     }
   });
 
@@ -203,12 +267,12 @@ function showFormView(pipeline = null) {
   if (pipeline) {
     // Edit mode
     editingPipelineId = pipeline.id;
-    document.getElementById("formTitle").textContent = "Edit Pipeline";
+    document.getElementById("formTitle").textContent = "Edit Automation";
     populateForm(pipeline);
   } else {
     // Add mode
     editingPipelineId = null;
-    document.getElementById("formTitle").textContent = "Add Pipeline";
+    document.getElementById("formTitle").textContent = "Add Automation";
     clearForm();
   }
 }
@@ -241,6 +305,37 @@ function displayPipelines(pipelines) {
     document
       .getElementById(`run-${pipeline.id}`)
       .addEventListener("click", () => runPipelineNow(pipeline.id));
+    
+    // Run dropdown toggle
+    const toggleBtn = document.getElementById(`run-toggle-${pipeline.id}`);
+    const menu = document.getElementById(`run-menu-${pipeline.id}`);
+    
+    toggleBtn?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      // Close other menus
+      document.querySelectorAll('.run-menu').forEach(m => {
+        if (m !== menu) m.classList.remove('show');
+      });
+      menu.classList.toggle('show');
+    });
+    
+    // Run menu items
+    menu?.querySelectorAll('.run-menu-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const type = item.dataset.type;
+        const id = parseInt(item.dataset.id);
+        
+        if (type === 'default') {
+          runPipelineNow(id);
+        } else {
+          runPipelineAlternate(id);
+        }
+        
+        menu.classList.remove('show');
+      });
+    });
+    
     document
       .getElementById(`update-${pipeline.id}`)
       .addEventListener("click", () => showFormView(pipeline));
@@ -258,6 +353,10 @@ function createPipelineCard(pipeline) {
     })
     .join("");
 
+  const executionTypeLabel = pipeline.executionType === "local" ? 
+    '<span class="execution-type-badge local">🖥️ Local</span>' : 
+    '<span class="execution-type-badge gitlab">☁️ Remote</span>';
+
   return `
     <div class="pipeline-card ${pipeline.isActive ? "" : "inactive"}">
       <div class="pipeline-header">
@@ -268,6 +367,7 @@ function createPipelineCard(pipeline) {
               <span class="status-indicator"></span>
               ${pipeline.isActive ? "Active" : "Inactive"}
             </span>
+            ${executionTypeLabel}
           </h3>
           <div class="pipeline-time">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
@@ -281,12 +381,27 @@ function createPipelineCard(pipeline) {
         </div>
       </div>
       <div class="pipeline-actions">
-        <button class="action-btn run" id="run-${pipeline.id}">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M10.804 8 5 4.633v6.734L10.804 8zm.792-.696a.802.802 0 0 1 0 1.392l-6.363 3.692C4.713 12.69 4 12.345 4 11.692V4.308c0-.653.713-.998 1.233-.696l6.363 3.692z"/>
-          </svg>
-          Run Now
-        </button>
+        <div class="run-dropdown">
+          <button class="action-btn run" id="run-${pipeline.id}">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M10.804 8 5 4.633v6.734L10.804 8zm.792-.696a.802.802 0 0 1 0 1.392l-6.363 3.692C4.713 12.69 4 12.345 4 11.692V4.308c0-.653.713-.998 1.233-.696l6.363 3.692z"/>
+            </svg>
+            Run
+          </button>
+          <button class="action-btn run-toggle" id="run-toggle-${pipeline.id}">
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 11L3 6h10z"/>
+            </svg>
+          </button>
+          <div class="run-menu" id="run-menu-${pipeline.id}">
+            <button class="run-menu-item" data-type="default" data-id="${pipeline.id}">
+              ${pipeline.executionType === 'local' ? '🖥️ Run Locally' : '☁️ Run on GitLab'}
+            </button>
+            <button class="run-menu-item" data-type="alternate" data-id="${pipeline.id}">
+              ${pipeline.executionType === 'local' ? '☁️ Run on GitLab' : '🖥️ Run Locally'}
+            </button>
+          </div>
+        </div>
         <button class="action-btn update" id="update-${pipeline.id}">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
             <path d="M12.146.146a.5.5 0 01.708 0l3 3a.5.5 0 010 .708l-10 10a.5.5 0 01-.168.11l-5 2a.5.5 0 01-.65-.65l2-5a.5.5 0 01.11-.168l10-10zM11.207 2.5L13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 01.5.5v.5h.5a.5.5 0 01.5.5v.5h.293l6.293-6.293z"/>
@@ -307,11 +422,18 @@ function createPipelineCard(pipeline) {
 
 function populateForm(pipeline) {
   document.getElementById("pipelineName").value = pipeline.name;
+  document.getElementById("executionType").value = pipeline.executionType || "gitlab";
   document.getElementById("gitlabUrl").value = pipeline.gitlabUrl;
   document.getElementById("triggerToken").value = pipeline.triggerToken
     ? "********"
     : "";
   document.getElementById("branchRef").value = pipeline.branchRef;
+
+  // Show/hide fields based on execution type
+  const type = pipeline.executionType || "gitlab";
+  document.getElementById("gitlabUrlGroup").style.display = type === "local" ? "none" : "block";
+  document.getElementById("triggerTokenGroup").style.display = type === "local" ? "none" : "block";
+  document.getElementById("branchRefGroup").style.display = type === "local" ? "none" : "block";
 
   // Parse time with seconds
   var timeParts = pipeline.triggerTime.split(":");
@@ -337,6 +459,7 @@ function populateForm(pipeline) {
 
 function clearForm() {
   document.getElementById("pipelineName").value = "";
+  document.getElementById("executionType").value = "gitlab";
   document.getElementById("gitlabUrl").value = "";
   document.getElementById("triggerToken").value = "";
   document.getElementById("branchRef").value = "main";
@@ -344,6 +467,11 @@ function clearForm() {
   document.getElementById("triggerMinutes").value = "00";
   document.getElementById("triggerSeconds").value = "00";
   document.getElementById("isActive").checked = true;
+  
+  // Show GitLab fields by default
+  document.getElementById("gitlabUrlGroup").style.display = "block";
+  document.getElementById("triggerTokenGroup").style.display = "block";
+  document.getElementById("branchRefGroup").style.display = "block";
 
   document.querySelectorAll(".day-btn").forEach(function (btn) {
     var day = parseInt(btn.dataset.day);
@@ -466,6 +594,7 @@ function editVariable(key) {
 
 async function savePipeline() {
   var name = document.getElementById("pipelineName").value.trim();
+  var executionType = document.getElementById("executionType").value;
   var gitlabUrl = document.getElementById("gitlabUrl").value.trim();
   var triggerToken = document.getElementById("triggerToken").value.trim();
   var branchRef = document.getElementById("branchRef").value.trim() || "main";
@@ -487,8 +616,14 @@ async function savePipeline() {
     },
   );
 
-  if (!name || !gitlabUrl || !triggerToken) {
-    showStatus("Please fill in all required fields", "error");
+  // Validation based on execution type
+  if (!name) {
+    showStatus("Please enter an automation name", "error");
+    return;
+  }
+  
+  if (executionType === "gitlab" && (!gitlabUrl || !triggerToken)) {
+    showStatus("Please fill in GitLab URL and trigger token", "error");
     return;
   }
 
@@ -502,7 +637,7 @@ async function savePipeline() {
       if (oldPipeline) {
         finalTriggerToken = oldPipeline.triggerToken;
       }
-    } else {
+    } else if (triggerToken) {
       // If it's a new or changed token, encrypt it
       finalTriggerToken = await encryptValue(triggerToken);
     }
@@ -510,6 +645,7 @@ async function savePipeline() {
     var pipeline = {
       id: editingPipelineId || Date.now(),
       name: name,
+      executionType: executionType,
       gitlabUrl: gitlabUrl,
       triggerToken: finalTriggerToken,
       branchRef: branchRef,
@@ -532,7 +668,7 @@ async function savePipeline() {
         action: "setupAlarms",
         pipelines: pipelines,
       });
-      showStatus("✓ Pipeline saved successfully!", "success");
+      showStatus("✓ Automation saved successfully!", "success");
       setTimeout(function () {
         showMainView();
         loadPipelines();
@@ -543,11 +679,16 @@ async function savePipeline() {
 
 function runPipelineNow(id) {
   chrome.runtime.sendMessage({ action: "triggerNow", pipelineId: id });
-  showStatus("✓ Pipeline trigger sent!", "success");
+  showStatus("✓ Test execution started!", "success");
+}
+
+function runPipelineAlternate(id) {
+  chrome.runtime.sendMessage({ action: "triggerAlternate", pipelineId: id });
+  showStatus("✓ Test execution started!", "success");
 }
 
 function deletePipeline(id) {
-  if (!confirm("Are you sure you want to delete this pipeline?")) {
+  if (!confirm("Are you sure you want to delete this automation?")) {
     return;
   }
 
@@ -616,7 +757,7 @@ function toggleTokenVisibility() {
 
 function updatePipelineCount(count) {
   document.getElementById("pipelineCount").textContent =
-    `${count} pipeline${count !== 1 ? "s" : ""} scheduled`;
+    `${count} automation${count !== 1 ? "s" : ""} scheduled`;
 }
 
 function showStatus(message, type) {
@@ -633,4 +774,82 @@ function escapeHtml(text) {
   const div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML;
+}
+
+// Load and display execution results
+function loadResults() {
+  chrome.storage.local.get({ executionHistory: [] }, (data) => {
+    const resultsList = document.getElementById('resultsList');
+    const emptyState = document.getElementById('resultsEmptyState');
+    let history = data.executionHistory || [];
+
+    // Clean up stale "running" entries (older than 2 hours)
+    const twoHoursAgo = Date.now() - (2 * 60 * 60 * 1000);
+    history = history.map(entry => {
+      if (entry.status === 'running' && entry.timestamp < twoHoursAgo) {
+        return { ...entry, status: 'failed' }; // Mark as failed if still running after 2 hours
+      }
+      return entry;
+    });
+
+    // Save cleaned history
+    chrome.storage.local.set({ executionHistory: history });
+
+    if (history.length === 0) {
+      resultsList.style.display = 'none';
+      emptyState.style.display = 'flex';
+      return;
+    }
+
+    resultsList.style.display = 'flex';
+    emptyState.style.display = 'none';
+
+    // Sort by timestamp descending (newest first)
+    history.sort((a, b) => b.timestamp - a.timestamp);
+
+    resultsList.innerHTML = history.map(result => {
+      const date = new Date(result.timestamp);
+      const statusClass = result.status === 'success' ? 'success' : 
+                         result.status === 'failed' ? 'failed' : 'running';
+      const statusText = result.status === 'success' ? '✓ Success' :
+                        result.status === 'failed' ? '✗ Failed' : '⟳ Running';
+
+      return `
+        <div class="result-card">
+          <div class="result-header">
+            <div class="result-title">${escapeHtml(result.pipelineName)}</div>
+            <span class="result-status ${statusClass}">${statusText}</span>
+          </div>
+          
+          <div class="result-meta">
+            <div>📅 ${date.toLocaleDateString()} ${date.toLocaleTimeString()}</div>
+            <div>🔗 Pipeline #${result.pipelineId}</div>
+          </div>
+
+          ${result.results ? `
+            <div class="result-data">
+              <div class="result-data-item">
+                <span class="result-data-label">Project</span>
+                <span class="result-data-value">${escapeHtml(result.results.CAPTURED_PROJECT_NAME || 'N/A')}</span>
+              </div>
+              <div class="result-data-item">
+                <span class="result-data-label">Hours</span>
+                <span class="result-data-value">${escapeHtml(result.results.CAPTURED_HOURS || 'N/A')}</span>
+              </div>
+              <div class="result-data-item">
+                <span class="result-data-label">Status</span>
+                <span class="result-data-value">${escapeHtml(result.results.CAPTURED_STATUS || 'N/A')}</span>
+              </div>
+            </div>
+          ` : ''}
+
+          ${result.pipelineUrl ? `
+            <a href="${result.pipelineUrl}" target="_blank" class="result-link">
+              View in GitLab →
+            </a>
+          ` : ''}
+        </div>
+      `;
+    }).join('');
+  });
 }

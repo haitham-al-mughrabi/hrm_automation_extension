@@ -43,71 +43,95 @@
                 </svg>
               </div>
               <div>
-                <h1>Pipeline Scheduler</h1>
+                <h1>Test Scheduler</h1>
                 <p class="header-subtitle" id="pipelineCount">
-                  0 pipelines scheduled
+                  0 automations scheduled
                 </p>
               </div>
+            </div>
+            <div class="header-right">
+              <button class="btn-header-add" id="addNewBtn">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z"/>
+                </svg>
+                Add Automation
+              </button>
             </div>
           </div>
         </header>
 
-        <div class="content">
-          <div class="action-bar">
-            <button class="btn btn-primary" id="addNewBtn">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="currentColor"
-              >
-                <path
-                  d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z"
-                />
-              </svg>
-              Add New Pipeline
-            </button>
-          </div>
-
-          <div id="pipelinesList" class="pipelines-list">
-            <!-- Pipelines will be inserted here -->
-          </div>
-
-          <div id="emptyState" class="empty-state">
-            <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-              <circle
-                cx="32"
-                cy="32"
-                r="30"
-                stroke="#E5E7EB"
-                stroke-width="2"
-                stroke-dasharray="4 4"
-              />
-              <path
-                d="M32 20v24M20 32h24"
-                stroke="#9CA3AF"
-                stroke-width="2"
-                stroke-linecap="round"
-              />
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+          <button class="tab-btn active" data-tab="pipelines">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 1L1 4.5L8 8L15 4.5L8 1Z"/>
+              <path d="M1 11.5L8 15L15 11.5"/>
+              <path d="M1 8L8 11.5L15 8"/>
             </svg>
-            <h3>No Pipelines Scheduled</h3>
-            <p>
-              Click "Add New Pipeline" to create your first scheduled pipeline
-              trigger
-            </p>
-          </div>
+            Automations
+          </button>
+          <button class="tab-btn" data-tab="results">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M2 3h12v10H2V3zm1 1v8h10V4H3z"/>
+              <path d="M5 6h6v1H5V6zm0 2h6v1H5V8zm0 2h4v1H5v-1z"/>
+            </svg>
+            Results
+          </button>
         </div>
 
-        <!-- Footer for Main View - FIXED -->
-        <footer class="app-footer">
-          <p>
-            Made with <span class="heart">&hearts;</span> by
-            <strong>Haitham Al Mughrabi</strong>
-          </p>
-          <p class="copyright">
-            &copy; <span id="currentYear">2026</span> All rights reserved
-          </p>
-        </footer>
+        <div class="content">
+          <!-- Pipelines Tab Content -->
+          <div id="pipelinesTab" class="tab-content active">
+            <div id="pipelinesList" class="pipelines-list">
+              <!-- Pipelines will be inserted here -->
+            </div>
+
+            <div id="emptyState" class="empty-state">
+              <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                <circle
+                  cx="32"
+                  cy="32"
+                  r="30"
+                  stroke="#E5E7EB"
+                  stroke-width="2"
+                  stroke-dasharray="4 4"
+                />
+                <path
+                  d="M32 20v24M20 32h24"
+                  stroke="#9CA3AF"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+              <h3>No Automations Scheduled</h3>
+              <p>
+                Click "Add Automation" to create your first scheduled test
+                execution
+              </p>
+            </div>
+          </div>
+
+          <!-- Results Tab Content -->
+          <div id="resultsTab" class="tab-content">
+            <div class="action-bar">
+              <button class="btn btn-secondary" id="clearResultsBtn" style="font-size: 12px; padding: 8px 12px;">
+                Clear History
+              </button>
+            </div>
+            <div id="resultsList" class="results-list">
+              <!-- Results will be inserted here -->
+            </div>
+
+            <div id="resultsEmptyState" class="empty-state">
+              <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                <circle cx="32" cy="32" r="30" stroke="#E5E7EB" stroke-width="2" stroke-dasharray="4 4"/>
+                <path d="M24 32h16M32 24v16" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <h3>No Results Yet</h3>
+              <p>Test execution results will appear here</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Form View (Add/Edit) -->
@@ -153,7 +177,7 @@
               />
             </svg>
           </div>
-          <h1 id="formTitle">Add Pipeline</h1>
+          <h1 id="formTitle">Add Automation</h1>
         </header>
 
         <div class="content">
@@ -172,16 +196,29 @@
                   d="M6 8a1 1 0 000 2h4a1 1 0 100-2H6zM4.862 11.276A.5.5 0 015 11.5v3a.5.5 0 01-1 0v-3a.5.5 0 01.862-.224zM11.138 11.276A.5.5 0 0111 11.5v3a.5.5 0 001 0v-3a.5.5 0 00-.862-.224z"
                 />
               </svg>
-              Pipeline Name
+              Automation Name
             </label>
             <input
               type="text"
               id="pipelineName"
-              placeholder="e.g., Production Deploy"
+              placeholder="e.g., Daily HRM Tests"
             />
           </div>
 
           <div class="form-group">
+            <label for="executionType">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M8 1a7 7 0 100 14A7 7 0 008 1zM4 8a4 4 0 118 0 4 4 0 01-8 0z"/>
+              </svg>
+              Execution Type
+            </label>
+            <select id="executionType">
+              <option value="gitlab">GitLab Pipeline (Remote)</option>
+              <option value="local">Local Test Run</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="gitlabUrlGroup">
             <label for="gitlabUrl">
               <svg
                 width="16"
@@ -201,12 +238,12 @@
               placeholder="https://gitlab.com/api/v4/projects/12345/trigger/pipeline"
             />
             <span class="helper-text"
-              >Get this from Settings &rarr; CI/CD &rarr; Pipeline
+              >Get this from Settings → CI/CD → Pipeline
               triggers</span
             >
           </div>
 
-          <div class="form-group">
+          <div class="form-group" id="triggerTokenGroup">
             <label for="triggerToken">
               <svg
                 width="16"
@@ -248,7 +285,7 @@
             >
           </div>
 
-          <div class="form-group">
+          <div class="form-group" id="branchRefGroup">
             <label for="branchRef">
               <svg
                 width="16"
@@ -341,7 +378,7 @@
             </div>
           </div>
 
-          <!-- Pipeline Variables Section -->
+          <!-- Test Variables Section -->
           <div class="form-group">
             <label>
               <svg
@@ -354,11 +391,10 @@
                   d="M2 3.5a.5.5 0 01.5-.5h11a.5.5 0 010 1h-11a.5.5 0 01-.5-.5zm0 3a.5.5 0 01.5-.5h6a.5.5 0 010 1h-6a.5.5 0 01-.5-.5zm0 3a.5.5 0 01.5-.5h11a.5.5 0 010 1h-11a.5.5 0 01-.5-.5zm0 3a.5.5 0 01.5-.5h6a.5.5 0 010 1h-6a.5.5 0 01-.5-.5z"
                 />
               </svg>
-              Pipeline Variables
+              Test Variables
             </label>
             <span class="helper-text"
-              >Optional variables to pass to the pipeline (e.g., ENVIRONMENT,
-              VERSION)</span
+              >Add test variables: USERNAME, PASSWORD, DESIRED_PROJECT_NAME, DESIRED_HOURS</span
             >
 
             <!-- Variables List -->
@@ -371,13 +407,13 @@
               <input
                 type="text"
                 id="variableKey"
-                placeholder="Variable Key (e.g., ENVIRONMENT)"
+                placeholder="e.g., USERNAME"
                 class="variable-input"
               />
               <input
                 type="text"
                 id="variableValue"
-                placeholder="Variable Value (e.g., production)"
+                placeholder="e.g., admin@example.com"
                 class="variable-input"
               />
               <button class="btn btn-small" id="addVariableBtn" type="button">
@@ -420,7 +456,7 @@
                   d="M13.854 3.646a.5.5 0 010 .708l-7 7a.5.5 0 01-.708 0l-3.5-3.5a.5.5 0 11.708-.708L6.5 10.293l6.646-6.647a.5.5 0 01.708 0z"
                 />
               </svg>
-              Save Pipeline
+              Save Automation
             </button>
             <button class="btn btn-secondary" id="testBtn">
               <svg
@@ -447,18 +483,18 @@
             Cancel
           </button>
         </div>
-
-        <!-- Footer for Form View - FIXED -->
-        <footer class="app-footer">
-          <p>
-            Made with <span class="heart">&hearts;</span> by
-            <strong>Haitham Al Mughrabi</strong>
-          </p>
-          <p class="copyright">
-            &copy; <span id="formYear">2026</span> All rights reserved
-          </p>
-        </footer>
       </div>
+
+      <!-- Shared Footer -->
+      <footer class="app-footer">
+        <p>
+          Made with <span class="heart">&hearts;</span> by
+          <strong>Haitham Al Mughrabi</strong>
+        </p>
+        <p class="copyright">
+          &copy; <span id="currentYear">2026</span> All rights reserved
+        </p>
+      </footer>
     </div>
 
     <script src="popup.js"></script>
