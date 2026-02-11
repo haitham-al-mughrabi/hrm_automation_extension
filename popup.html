@@ -83,6 +83,23 @@
           </button>
         </div>
 
+        <div class="results-actions" id="resultsActions" style="display: none;">
+          <button class="action-btn" id="refreshResults">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"/>
+              <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z"/>
+            </svg>
+            Refresh
+          </button>
+          <button class="action-btn delete" id="clearHistory">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M5.5 5.5A.5.5 0 016 6v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm2.5 0a.5.5 0 01.5.5v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm3 .5a.5.5 0 00-1 0v6a.5.5 0 001 0V6z"/>
+              <path fill-rule="evenodd" d="M14.5 3a1 1 0 01-1 1H13v9a2 2 0 01-2 2H5a2 2 0 01-2-2V4h-.5a1 1 0 01-1-1V2a1 1 0 011-1H6a1 1 0 011-1h2a1 1 0 011 1h3.5a1 1 0 011 1v1zM4.118 4L4 4.059V13a1 1 0 001 1h6a1 1 0 001-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z" clip-rule="evenodd"/>
+            </svg>
+            Clear History
+          </button>
+        </div>
+
         <div class="content">
           <!-- Pipelines Tab Content -->
           <div id="pipelinesTab" class="tab-content active">
@@ -117,13 +134,12 @@
 
           <!-- Results Tab Content -->
           <div id="resultsTab" class="tab-content">
-            <div class="action-bar">
-              <button class="btn btn-secondary" id="clearResultsBtn" style="font-size: 12px; padding: 8px 12px;">
-                Clear History
-              </button>
-            </div>
             <div id="resultsList" class="results-list">
               <!-- Results will be inserted here -->
+            </div>
+            
+            <div id="resultsPagination" class="pagination" style="display: none;">
+              <!-- Pagination will be inserted here -->
             </div>
 
             <div id="resultsEmptyState" class="empty-state">
@@ -527,6 +543,53 @@
         </div>
       </div>
 
+      <!-- Details View -->
+      <div id="detailsView" class="view">
+        <header>
+          <button class="back-btn-with-text" id="detailsBackBtn">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/>
+            </svg>
+            Back to Results
+          </button>
+          <h2>Execution Details</h2>
+        </header>
+
+        <div class="details-content">
+          <div class="details-section">
+            <h3>Execution Info</h3>
+            <div id="executionInfo"></div>
+          </div>
+
+          <div class="details-section">
+            <h3>Variables Used</h3>
+            <div id="variablesInfo"></div>
+          </div>
+
+          <div class="details-section">
+            <h3>Results</h3>
+            <div id="resultsInfo"></div>
+          </div>
+
+          <div class="details-section" id="logsSection" style="display: none;">
+            <h3>Execution Logs</h3>
+            <div class="logs-container">
+              <pre id="logsContent"></pre>
+            </div>
+          </div>
+
+          <div class="details-section" id="screenshotsSection" style="display: none;">
+            <h3>Screenshots</h3>
+            <div id="screenshotsContainer" class="media-grid"></div>
+          </div>
+
+          <div class="details-section" id="videosSection" style="display: none;">
+            <h3>Videos</h3>
+            <div id="videosContainer" class="media-grid"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- Shared Footer -->
       <footer class="app-footer">
         <p>
@@ -537,6 +600,18 @@
           &copy; <span id="currentYear">2026</span> All rights reserved
         </p>
       </footer>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+      <div class="modal-content">
+        <h3 id="confirmTitle">Confirm</h3>
+        <p id="confirmMessage"></p>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="confirmCancel">Cancel</button>
+          <button class="btn btn-primary" id="confirmOk">OK</button>
+        </div>
+      </div>
     </div>
 
     <script src="popup.js"></script>

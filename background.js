@@ -107,30 +107,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
       }
     });
-  } else if (request.action === "triggerAlternate") {
-    chrome.storage.local.get({ pipelines: [] }, (data) => {
-      const pipeline = data.pipelines.find((p) => p.id === request.pipelineId);
-      if (pipeline) {
-        // Run with opposite execution type
-        if (pipeline.executionType === "local") {
-          // Local automation trying to run on GitLab
-          if (!pipeline.gitlabUrl || !pipeline.triggerToken) {
-            chrome.notifications.create({
-              type: "basic",
-              iconUrl: "icons/icon128.png",
-              title: `${pipeline.name} - Error ✗`,
-              message: 'GitLab URL and token not configured. Edit automation to add them.',
-              priority: 2,
-            });
-            return;
-          }
-          triggerPipeline(pipeline);
-        } else {
-          // GitLab automation trying to run locally
-          triggerLocalExecution(pipeline);
-        }
-      }
-    });
   }
   // Note: We don't return true because we don't need async response
 });
@@ -538,16 +514,23 @@ function saveExecutionHistory(execution) {
 }
 
 function updateExecutionHistory(executionId, updates) {
+  console.log(`📝 Updating execution ${executionId} with:`, updates);
   chrome.storage.local.get({ executionHistory: [] }, (data) => {
     const history = data.executionHistory || [];
     const index = history.findIndex(e => e.id === executionId);
     
     if (index !== -1) {
+      console.log(`✅ Found execution at index ${index}, updating...`);
       history[index] = { ...history[index], ...updates };
       chrome.storage.local.set({ executionHistory: history }, () => {
+        console.log(`💾 Saved updated history, notifying popup...`);
         // Notify popup to refresh
-        chrome.runtime.sendMessage({ action: 'historyUpdated' }).catch(() => {});
+        chrome.runtime.sendMessage({ action: 'historyUpdated' }).catch((err) => {
+          console.log('⚠️ Could not send message to popup (probably closed):', err.message);
+        });
       });
+    } else {
+      console.error(`❌ Execution ${executionId} not found in history!`);
     }
   });
 }
@@ -774,17 +757,42 @@ function startLocalMonitoring(execution) {
   const checkInterval = setInterval(async () => {
     try {
       const response = await fetch(`http://localhost:5000/status/${execution.pipelineId}`);
+      
+      if (!response.ok) {
+        console.error(`Status check failed: ${response.status} ${response.statusText}`);
+        if (response.status === 404) {
+          console.log('Execution not found on server, stopping monitoring');
+          clearInterval(checkInterval);
+        }
+        return;
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('Server returned non-JSON response:', await response.text());
+        clearInterval(checkInterval);
+        return;
+      }
+      
       const data = await response.json();
       
       console.log('Local execution status:', data);
       
       if (data.completed) {
         console.log('Execution completed! Clearing interval and updating history');
+        console.log('Execution ID:', execution.id);
+        console.log('New status:', data.status);
+        console.log('Results:', data.results);
         clearInterval(checkInterval);
         
         updateExecutionHistory(execution.id, {
           status: data.status,
           results: data.results
+        });
+        
+        // Force refresh popup if open
+        chrome.runtime.sendMessage({ action: 'historyUpdated' }).catch(() => {
+          console.log('Popup not open, skipping message');
         });
         
         // Show notification with error details if failed
